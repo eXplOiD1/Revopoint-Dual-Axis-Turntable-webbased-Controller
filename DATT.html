@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Revopoint DualAxis Turntable</title>
+  </head>
+
+  <style>
+  td,
+  th {
+    padding: 5px;
+  }
+  html {
+    display: flex;
+    justify-content: center;
+  }
+  body{
+    background-color: #141414;
+    color: #FFF;
+    display: inline-block;
+    margin: 0px auto;
+    text-align: center;
+  }
+  button{
+    background-color: #373737;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin-right: 3px;
+    cursor: pointer;
+  }
+  button:hover{
+    background-color: #2d2d2d;
+  }
+  .slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 25px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+  direction: rtl
+  }
+
+  .slider:hover {
+    opacity: 1;
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    background: #373737;
+    cursor: pointer;
+  }
+
+  .slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    background: #373737;
+    cursor: pointer;
+  }
+  </style>
+  <body>
+    <h1>Revopoint DATT</h1><br>
+    <button style="position:absolute; top:0; right:0; margin-top:5px; margin-right:5px;" id="discss">CSS</button>
+    <table>
+      <tr>
+        <td><h3>Connection</h3></td>
+        <tr>
+          <td><button onclick="connect()">Select device</button></td>
+        </tr>
+      </tr>
+      <tr>
+        <td><h3>Speed</h3></td>
+        <tr><td>Rotation Speed</td></tr>
+        <tr>
+          <td>
+            <input
+              class="slider"
+              type="range"
+              min="35.64"
+              max="131"
+              value="35.64"
+              id="rotation_speed"
+              onchange="set_rotation_speed(this)"
+              oninput="num.value = this.value"/>
+            <output id="num">35.64</output>
+          </td>
+        </tr>
+        <tr><td>Tilt Speed</td></tr>
+        <tr>
+          <td>
+            <input
+              class="slider"
+              type="range"
+              min="9"
+              max="35"
+              value="15"
+              id="tilt_speed"
+              onchange="set_tilt_speed(this)"
+              oninput="num2.value = this.value"/>
+            <output id="num2">15</output>
+          </td>
+        </tr>
+      <tr>
+        <td><h3>Rotation</h3></td>
+        <tr>
+          <td>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=-90;')">L90</button>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=-45;')">L45</button>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=-30;')">L30</button>
+            <button onclick="bluetoothSend('+CT,TOZERO;')">Zero</button>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=30;')">R30</button>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=45;')">R45</button>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=90;')">R90</button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=-360;')">L360</button>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=360;')">R360</button>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=-1800;')">LX5</button>
+            <button onclick="bluetoothSend('+CT,TURNANGLE=1800;')">RX5</button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button onclick="bluetoothSend('+CT,STOP;')">Stop Rotation</button>
+          </td>
+        </tr>
+      <tr>
+        <td><h3>Tilt</h3></td>
+        <tr>
+          <td>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=-30;')">L30</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=-25;')">L25</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=-20;')">L20</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=-10;')">L10</button>
+            <button onclick="bluetoothSend('+CR,TOZERO;')">Zero</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=10;')">R10</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=20;')">R20</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=25;')">R25</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=30;')">R30</button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button onclick="bluetoothSend('+CR,STOP;')">Stop Tilt</button>
+          </td>
+        </tr>
+    <table>
+    <script>
+      /**
+       * Mit nRFConnect verbinden
+       * Services anschauen und die wo man braucht beim verbinden angeben
+       * Schauen in welchen PrimaryService der Befehl / Characteristic geschrieben werden muss
+       **/
+
+      let server = false;
+      let tiltvalue = 0;
+
+      async function connect() {
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [0xffe0, 0xffe1],
+        });
+        server = await device.gatt.connect();
+        console.log("Connected! Server: ", server);
+        var html = strMessage1.innerHTML;
+        html = html.replace( 'Select device','Connected');
+        strMessage1.innerHTML = html;
+        return server;
+      }
+
+      async function bluetoothSend(cmd) {
+        var enc = new TextEncoder();
+        const service = await server.getPrimaryService(0xffe0);
+        const characteristic = await service.getCharacteristic(0xffe1);
+
+        characteristic.writeValue(enc.encode(cmd));
+      }
+
+      function set_rotation_speed(event) {
+        console.log(`+CT,TURNSPEED=${event.value};`);
+        bluetoothSend(`+CT,TURNSPEED=${event.value};`);
+      }
+
+      function set_tilt_speed(event) {
+        console.log(`+CR,TILTSPEED=${event.value};`);
+        bluetoothSend(`+CR,TILTSPEED=${event.value};`);
+      }
+
+      /**Disable CSS Code**/
+      document.getElementById("discss").onclick = function() {
+        document.styleSheets[0].disabled = !document.styleSheets[0].disabled;
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (!e.repeat) {
+          console.log(`Key "${e.key}" pressed [event: keydown]`);
+        } else {
+          console.log(`Key "${e.key}" repeating [event: keydown]`);
+        }
+        switch (e.key) {
+          case "a":
+            bluetoothSend("+CT,TURNANGLE=1;");
+            break;
+
+          case "d":
+            bluetoothSend("+CT,TURNANGLE=-1;");
+            break;
+
+          case "w":
+            tiltvalue = tiltvalue + 1;
+            if (tiltvalue > 30) {
+              tiltvalue = 30;
+            }
+            bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
+            break;
+
+          case "s":
+            tiltvalue = tiltvalue + -1;
+            if (tiltvalue < -30) {
+              tiltvalue = -30;
+            }
+            console.log(tiltvalue);
+            bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
+            break;
+
+          case "e":
+            bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
+            break;
+
+          case "q":
+            bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
+            break;
+
+          default:
+            break;
+        }
+      });
+    </script>
+  </body>
+</html>
