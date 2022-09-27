@@ -1,5 +1,5 @@
-Control the Revopoint Dual Axis Turntable with your Browser, using the Javascript navigator.bluetooth
+Control the Revopoint Dual Axis Turntable with your Browser.
 
-You can use your Keyboard by pressing: w, a, s and d to control the Board
+You can use your Keyboard by pressing: W, A, S and D to control the Turntable
 
-Special Thanks for SphaeroX for the Base System
+Special Thanks goes to SphaeroX for the Base System
