@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Revopoint DualAxis Turntable</title>
+    <title>Revopoint Dual Axis Turntable</title>
   </head>
   <style>
   td,
@@ -26,7 +26,7 @@
     background-color: #373737;
     border: none;
     color: white;
-    padding: 15px 32px;
+    padding: 10px 25px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
@@ -35,9 +35,32 @@
     margin-bottom: 8px;
     cursor: pointer;
   }
+  h1{
+    margin-bottom: -10px;
+  }
+  h3{
+    margin-top: 0px;
+    margin-bottom: 5px;
+  }
   button:hover{
     background-color: #2d2d2d;
   }
+
+  .input_text{
+    box-sizing: border-box;
+    border: none;
+    background: #373737;
+    color: white;
+    margin-right: 3px;
+    padding: 11.4px;
+    text-align: center;
+    font-weight:bold;
+  }
+
+  .input_text:hover{
+    background-color: #2d2d2d;
+  }
+
   .slider {
   -webkit-appearance: none;
   width: 100%;
@@ -116,13 +139,11 @@
         <td><h3>Rotation</h3></td>
         <tr>
           <td>
-            <button onclick="bluetoothSend('+CT,TURNANGLE=-90;')">L90&#xB0</button>
-            <button onclick="bluetoothSend('+CT,TURNANGLE=-45;')">L45&#xB0</button>
-            <button onclick="bluetoothSend('+CT,TURNANGLE=-30;')">L30&#xB0</button>
-            <button onclick="bluetoothSend('+CT,TOZERO;')">Zero</button>
-            <button onclick="bluetoothSend('+CT,TURNANGLE=30;')">R30&#xB0</button>
-            <button onclick="bluetoothSend('+CT,TURNANGLE=45;')">R45&#xB0</button>
-            <button onclick="bluetoothSend('+CT,TURNANGLE=90;')">R90&#xB0</button>
+            <button id="ct_backward"> &larr;</button>
+            <input type="text" class=input_text id="ct_turnangle" value="10" />
+            <button id="ct_forward">&rarr;</button>
+            <button style="margin-left:1px" onclick="bluetoothSend('+CT,TOZERO;')">Zero</button>
+            <button onclick="bluetoothSend('+CT,STOP;')">Stop Rotation</button>
           </td>
         </tr>
         <tr>
@@ -135,29 +156,43 @@
         </tr>
         <tr>
           <td>
-            <button onclick="bluetoothSend('+CT,STOP;')">Stop Rotation</button>
+
           </td>
         </tr>
       <tr>
         <td><h3>Tilt</h3></td>
         <tr>
           <td>
-            <button onclick="bluetoothSend('+CR,TILTVALUE=-30;')">L30&#xB0</button>
-            <button onclick="bluetoothSend('+CR,TILTVALUE=-25;')">L25&#xB0</button>
-            <button onclick="bluetoothSend('+CR,TILTVALUE=-20;')">L20&#xB0</button>
-            <button onclick="bluetoothSend('+CR,TILTVALUE=-10;')">L10&#xB0</button>
-            <button onclick="bluetoothSend('+CR,TOZERO;')">Zero</button>
-            <button onclick="bluetoothSend('+CR,TILTVALUE=10;')">R10&#xB0</button>
-            <button onclick="bluetoothSend('+CR,TILTVALUE=20;')">R20&#xB0</button>
-            <button onclick="bluetoothSend('+CR,TILTVALUE=25;')">R25&#xB0</button>
-            <button onclick="bluetoothSend('+CR,TILTVALUE=30;')">R30&#xB0</button>
-          </td>
-        </tr>
-        <tr>
-          <td>
+            <button id="cr_backward">+</button>
+            <input type="text" class=input_text id="cr_turnangle" value="15" />
+            <button id="cr_forward">-</button>
+            <button style="margin-left:1px" onclick="bluetoothSend('+CR,TOZERO;')">Zero</button>
             <button onclick="bluetoothSend('+CR,STOP;')">Stop Tilt</button>
           </td>
         </tr>
+        <tr>
+        </tr>
+      <tr>
+        <td><h3>Rotation with Steps</h3></td>
+      </tr>
+      <tr>
+        <td>Turnangle per Step&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style="margin-left: 10px" class=input_text type="text" id="sp_turnangle" value="10" /></td>
+      </tr>
+      <tr>
+        <td>Pause between move in ms<input style="margin-left: 10px" class=input_text type="text" id="sp_pause" value="2500" /></td>
+      </tr>
+      <tr>
+        <td>Steps:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style="margin-left: 10px" class=input_text type="text" id="sp_steps" value="36" /></td>
+      </tr>
+      <tr>
+        <td>
+          <br>
+          <button id="sp_start">Start</button>
+          <button id="sp_stop">Stop</button>
+          <button id="sp_step_forward">Step forward</button>
+          <button id="sp_step_back">Step back</button>
+        </td>
+      </tr>
     </table>
     <script>
       /**
@@ -166,8 +201,10 @@
        * Schauen in welchen PrimaryService der Befehl / Characteristic geschrieben werden muss
        **/
 
-      let server = false;
-      let tiltvalue = 0;
+       let server = false;
+       let tiltvalue = 0;
+       let sp_current_step = 0;
+       let spInterval = false;
 
       async function connect() {
         const device = await navigator.bluetooth.requestDevice({
@@ -204,6 +241,76 @@
       document.getElementById("discss").onclick = function() {
         document.styleSheets[0].disabled = !document.styleSheets[0].disabled;
       }
+
+      document
+        .getElementById("ct_forward")
+        .addEventListener("click", (event) => {
+          bluetoothSend(
+            `+CT,TURNANGLE=${document.getElementById("ct_turnangle").value};`
+          );
+        });
+
+      document
+        .getElementById("ct_backward")
+        .addEventListener("click", (event) => {
+          bluetoothSend(
+            `+CT,TURNANGLE=-${document.getElementById("ct_turnangle").value};`
+          );
+        });
+
+      document
+        .getElementById("cr_forward")
+        .addEventListener("click", (event) => {
+          bluetoothSend(
+            `+CR,TILTVALUE=${document.getElementById("cr_turnangle").value};`
+          );
+        });
+
+      document
+        .getElementById("cr_backward")
+        .addEventListener("click", (event) => {
+          bluetoothSend(
+            `+CR,TILTVALUE=-${document.getElementById("cr_turnangle").value};`
+          );
+        });
+
+        document.getElementById("sp_start").addEventListener("click", (event) => {
+          spInterval = setInterval(() => {
+            sp_current_step++;
+
+            bluetoothSend(
+              `+CT,TURNANGLE=${document.getElementById("sp_turnangle").value};`
+            );
+
+            if (
+              sp_current_step ==
+              parseInt(document.getElementById("sp_steps").value)
+            ) {
+              clearInterval(spInterval);
+            }
+          }, parseInt(document.getElementById("sp_pause").value));
+        });
+
+        document.getElementById("sp_stop").addEventListener("click", (event) => {
+          sp_current_step = 0;
+          clearInterval(spInterval);
+        });
+
+        document
+          .getElementById("sp_step_back")
+          .addEventListener("click", (event) => {
+            bluetoothSend(
+              `+CT,TURNANGLE=-${document.getElementById("sp_turnangle").value};`
+            );
+          });
+
+        document
+          .getElementById("sp_step_forward")
+          .addEventListener("click", (event) => {
+            bluetoothSend(
+              `+CT,TURNANGLE=${document.getElementById("sp_turnangle").value};`
+            );
+          });
 
       document.addEventListener("keydown", (e) => {
         if (!e.repeat) {
