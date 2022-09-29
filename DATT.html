@@ -163,14 +163,22 @@
         <td><h3>Tilt</h3></td>
         <tr>
           <td>
-            <button id="cr_backward">+</button>
+            <button id="cr_backward">-</button>
             <input type="text" class=input_text id="cr_turnangle" value="15" />
-            <button id="cr_forward">-</button>
+            <button id="cr_forward">+</button>
             <button style="margin-left:1px" onclick="bluetoothSend('+CR,TOZERO;')">Zero</button>
             <button onclick="bluetoothSend('+CR,STOP;')">Stop Tilt</button>
           </td>
         </tr>
         <tr>
+          <td>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=-30;')">L30&#xB0</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=-20;')">L20&#xB0</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=-10;')">L10&#xB0</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=10;')">R10&#xB0</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=20;')">R20&#xB0</button>
+            <button onclick="bluetoothSend('+CR,TILTVALUE=30;')">R30&#xB0</button>
+          </td>
         </tr>
       <tr>
         <td><h3>Rotation with Steps</h3></td>
