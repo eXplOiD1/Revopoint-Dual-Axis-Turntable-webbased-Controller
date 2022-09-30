@@ -355,8 +355,7 @@
           );
         });
 
-      document
-        .getElementById("cr_backward")
+      document.getElementById("cr_backward")
         .addEventListener("click", (event) => {
           bluetoothSend(
             `+CR,TILTVALUE=-${document.getElementById("cr_turnangle").value};`
@@ -407,7 +406,7 @@
           time_tilt1 = 50
         }
         await sleep(time_tilt1)
-        bluetoothSend('+CT,TURNANGLE=360;');
+        bluetoothSend('+CT,TURNANGLE=1080;');
         await sleep(time_turn);
         bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt2").value};`);
         await sleep(20)
@@ -420,7 +419,6 @@
         time_tilt2 = tilt1_value + tilt2_value
         time_tilt2 = time_tilt2 * 0.157
         await sleep(time_tilt2)
-        bluetoothSend('+CT,TURNANGLE=360;');
         await sleep(time_turn);
         bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt3").value};`);
         await sleep(20)
@@ -433,7 +431,6 @@
         time_tilt3 = tilt2_value + tilt3_value
         time_tilt3 = time_tilt3 * 0.157
         await sleep(time_tilt3)
-        bluetoothSend('+CT,TURNANGLE=360;');
         await sleep(time_turn);
         bluetoothSend(`+CR,TILTVALUE=0;`);
       }
