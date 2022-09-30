@@ -15,6 +15,7 @@
     display: flex;
     justify-content: center;
   }
+
   body{
     background-color: #141414;
     color: #FFF;
@@ -22,28 +23,31 @@
     margin: 0px auto;
     text-align: center;
   }
+
   button{
     background-color: #373737;
     border: none;
     color: white;
-    padding: 10px 25px;
+    padding: 7px 25px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
     font-size: 16px;
     margin-right: 3px;
-    margin-bottom: 8px;
+    margin-bottom: 0px;
     cursor: pointer;
   }
+
+  button:hover{
+    background-color: #2d2d2d;
+  }
+
   h1{
     margin-bottom: -10px;
   }
   h3{
     margin-top: 0px;
-    margin-bottom: 5px;
-  }
-  button:hover{
-    background-color: #2d2d2d;
+    margin-bottom: -5px;
   }
 
   .input_text{
@@ -92,6 +96,53 @@
     background: #373737;
     cursor: pointer;
   }
+
+  label {
+      display: inline-block;
+      cursor: pointer;
+      position: relative;
+      padding-left: 28px;
+      margin-right: 12px;
+      font-size: 16px;
+      line-height: 22px;
+      font-weight: bold;
+  }
+
+  input[type=radio],
+  input[type=checkbox] {
+      display: none;
+  }
+
+  label:before {
+      font-weight: normal;
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      position: absolute;
+      left: 0;
+      bottom: 1px;
+      background-color: #d3d3d3;
+      box-shadow: inset 0px 2px 3px 0px #1e1e1e;
+  }
+
+  .radio label:before {
+      border-radius: 10px;
+  }
+
+  .checkbox label:before {
+      border-radius: 3px;
+  }
+
+  input[type=radio]:checked + label:before {
+      content: '\2022';
+      color: #2d2d2d;
+      font-size: 32px;
+      text-align: center;
+      line-height: 20px;
+  }
+
   </style>
   <body>
     <h1>Revopoint DATT</h1><br>
@@ -181,6 +232,33 @@
           </td>
         </tr>
       <tr>
+        <td><h3>Auto Rotation</h3></td>
+        <tr>
+          <td>
+            <div id="speeds">
+              <input type="radio" name="Check" onclick="onlyOne(this)" id="a_rot_sl" value="a_rot_sl">
+              <label for="a_rot_sl"> Slow </label>
+              <input type="radio" name="Check" onclick="onlyOne(this)" id="a_rot_mi" value="a_rot_mi" checked="checked">
+              <label for="a_rot_mi"> Medium </label>
+              <input type="radio" name="Check" onclick="onlyOne(this)" id="a_rot_fa" value="a_rot_fa">
+              <label for="a_rot_fa"> Fast </label>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <input type="text" class=input_text id="cr_tilt1" value="0" />
+            <input type="text" class=input_text id="cr_tilt2" value="-30" />
+            <input type="text" class=input_text id="cr_tilt3" value="15" />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <button id="a_rot_start">Start Cycle</button>
+            <button id="a_rot_stop">Stop Cycle</button>
+          </td>
+        </tr>
+      <tr>
         <td><h3>Rotation with Steps</h3></td>
       </tr>
       <tr>
@@ -221,9 +299,6 @@
         });
         server = await device.gatt.connect();
         console.log("Connected! Server: ", server);
-        var html = strMessage1.innerHTML;
-        html = html.replace( 'Select device','Connected');
-        strMessage1.innerHTML = html;
         return server;
       }
 
@@ -231,7 +306,6 @@
         var enc = new TextEncoder();
         const service = await server.getPrimaryService(0xffe0);
         const characteristic = await service.getCharacteristic(0xffe1);
-
         characteristic.writeValue(enc.encode(cmd));
       }
 
@@ -248,6 +322,13 @@
       /**Disable CSS Code**/
       document.getElementById("discss").onclick = function() {
         document.styleSheets[0].disabled = !document.styleSheets[0].disabled;
+      }
+
+      function onlyOne(checkbox) {
+        var checkboxes = document.getElementsByName('check')
+        checkboxes.forEach((item) => {
+            if (item !== checkbox) item.checked = false
+        })
       }
 
       document
@@ -281,6 +362,93 @@
             `+CR,TILTVALUE=-${document.getElementById("cr_turnangle").value};`
           );
         });
+
+    document.getElementById("a_rot_start").addEventListener("click", (event) => {
+      var speeds = document.getElementById('speeds').value;
+      var time_turn;
+      var time_tilt1;
+      var time_tilt2;
+      var time_tilt3;
+      tilt1_value = document.getElementById('cr_tilt1').value
+      tilt2_value = document.getElementById('cr_tilt2').value
+      tilt3_value = document.getElementById('cr_tilt3').value
+
+      async function speed() {
+        if (document.getElementById('a_rot_sl').checked){
+          time_turn = 91800;
+          await sleep(20);
+          bluetoothSend(`+CT,TURNSPEED=110;`);
+          await sleep(20);
+          bluetoothSend(`+CR,TILTSPEED=9;`);
+          await sleep(20);
+        } else if (document.getElementById('a_rot_mi').checked) {
+          time_turn = 61800;
+          await sleep(20);
+          bluetoothSend(`+CT,TURNSPEED=60;`);
+          await sleep(20);
+          bluetoothSend(`+CR,TILTSPEED=9;`);
+          await sleep(20);
+        } else if (document.getElementById('a_rot_fa').checked) {
+          time_turn = 22200;
+          await sleep(20);
+          bluetoothSend(`+CT,TURNSPEED=35.64;`);
+          await sleep(20);
+          bluetoothSend(`+CR,TILTSPEED=9;`);
+          await sleep(20);
+        }
+      }
+
+      async function run_automatic() {
+        bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt1").value};`);
+        time_tilt1 = tilt1_value * 0.157;
+        if (time_tilt1 < 0) {
+          time_tilt1 = time_tilt1 * -1
+        } else if (time_tilt1 == 0){
+          time_tilt1 = 50
+        }
+        await sleep(time_tilt1)
+        bluetoothSend('+CT,TURNANGLE=360;');
+        await sleep(time_turn);
+        bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt2").value};`);
+        await sleep(20)
+        if (tilt1_value < 0){
+          tilt1_value = tilt1_value * -1
+        }
+        if (tilt2_value < 0){
+          tilt2_value = tilt2_value * -1
+        }
+        time_tilt2 = tilt1_value + tilt2_value
+        time_tilt2 = time_tilt2 * 0.157
+        await sleep(time_tilt2)
+        bluetoothSend('+CT,TURNANGLE=360;');
+        await sleep(time_turn);
+        bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt3").value};`);
+        await sleep(20)
+        if (tilt2_value < 0){
+          tilt2_value = tilt2_value * -1
+        }
+        if (tilt3_value < 0){
+          tilt3_value = tilt3_value * -1
+        }
+        time_tilt3 = tilt2_value + tilt3_value
+        time_tilt3 = time_tilt3 * 0.157
+        await sleep(time_tilt3)
+        bluetoothSend('+CT,TURNANGLE=360;');
+        await sleep(time_turn);
+        bluetoothSend(`+CR,TILTVALUE=0;`);
+      }
+
+      speed()
+      run_automatic()
+    });
+
+    document.getElementById("a_rot_stop").addEventListener("click", (event) => {
+      return;
+    });
+
+      function sleep(milliseconds) {
+       return new Promise(resolve => setTimeout(resolve, milliseconds));
+      }
 
         document.getElementById("sp_start").addEventListener("click", (event) => {
           spInterval = setInterval(() => {
