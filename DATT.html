@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Revopoint Dual Axis Turntable</title>
   </head>
+  <div w3-include-html=".\DATT.cfg"></div>
   <style>
   td,
   th {
@@ -143,7 +144,6 @@
       line-height: 20px;
   }
   </style>
-
   <body>
     <h1>Revopoint DATT</h1><br>
     <button style="position:absolute; top:0; right:0; margin-top:5px; margin-right:5px;" id="discss">CSS</button>
@@ -262,7 +262,7 @@
         <td><h3>Rotation with Steps</h3></td>
       </tr>
       <tr>
-        <td>Steps:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style="margin-left: 10px" class=input_text type="text" id="sp_steps" value="36"/></td>
+        <td>Steps:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style="margin-left: 10px" class=input_text type="text" id="sp_steps" value="36" /></td>
       </tr>
       <tr>
         <td>Pause between move in ms<input style="margin-left: 10px" class=input_text type="text" id="sp_pause" value="2500" /></td>
@@ -284,134 +284,117 @@
        * Schauen in welchen PrimaryService der Befehl / Characteristic geschrieben werden muss
        **/
 
-       let server = false;
-       let tiltvalue = 0;
-       let sp_current_step = 0;
-       let spInterval = false;
+	let server = false;
+	let tiltvalue = 0;
+	let sp_current_step = 0;
+	let spInterval = false;
 
-      async function connect() {
-        const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [0xffe0, 0xffe1],
+    async function connect() {
+		const device = await navigator.bluetooth.requestDevice({
+			acceptAllDevices: true,
+			optionalServices: [0xffe0, 0xffe1],
         });
-        server = await device.gatt.connect();
-        console.log("Connected! Server: ", server);
-        return server;
-      }
+		server = await device.gatt.connect();
+		console.log("Connected! Server: ", server);
+		return server;
+	}
 
-      async function bluetoothSend(cmd) {
-        var enc = new TextEncoder();
-        const service = await server.getPrimaryService(0xffe0);
-        const characteristic = await service.getCharacteristic(0xffe1);
-        characteristic.writeValue(enc.encode(cmd));
-      }
+    async function bluetoothSend(cmd) {
+		var enc = new TextEncoder();
+		const service = await server.getPrimaryService(0xffe0);
+		const characteristic = await service.getCharacteristic(0xffe1);
+		characteristic.writeValue(enc.encode(cmd));
+    }
 
-      function set_rotation_speed(event) {
-        console.log(`+CT,TURNSPEED=${event.value};`);
-        bluetoothSend(`+CT,TURNSPEED=${event.value};`);
-      }
+    function set_rotation_speed(event) {
+		console.log(`+CT,TURNSPEED=${event.value};`);
+		bluetoothSend(`+CT,TURNSPEED=${event.value};`);
+    }
 
-      function set_tilt_speed(event) {
-        console.log(`+CR,TILTSPEED=${event.value};`);
-        bluetoothSend(`+CR,TILTSPEED=${event.value};`);
-      }
+    function set_tilt_speed(event) {
+		console.log(`+CR,TILTSPEED=${event.value};`);
+		bluetoothSend(`+CR,TILTSPEED=${event.value};`);
+    }
 
       /**Disable CSS Code**/
-      document.getElementById("discss").onclick = function() {
-        document.styleSheets[0].disabled = !document.styleSheets[0].disabled;
-      }
+    document.getElementById("discss").onclick = function() {
+		document.styleSheets[0].disabled = !document.styleSheets[0].disabled;
+    }
 
-      function onlyOne(checkbox) {
-        var checkboxes = document.getElementsByName('check')
-        checkboxes.forEach((item) => {
-            if (item !== checkbox) item.checked = false
-        })
-      }
+    function onlyOne(checkbox) {
+		var checkboxes = document.getElementsByName('check')
+		checkboxes.forEach((item) => {if (item !== checkbox) item.checked = false})
+    }
 
-      document
-        .getElementById("ct_forward")
-        .addEventListener("click", (event) => {
-          bluetoothSend(
-            `+CT,TURNANGLE=${document.getElementById("ct_turnangle").value};`
-          );
-        });
+    document.getElementById("ct_forward").addEventListener("click", (event) => {
+        bluetoothSend(`+CT,TURNANGLE=${document.getElementById("ct_turnangle").value};`);
+    });
 
-      document
-        .getElementById("ct_backward")
-        .addEventListener("click", (event) => {
-          bluetoothSend(
-            `+CT,TURNANGLE=-${document.getElementById("ct_turnangle").value};`
-          );
-        });
+    document.getElementById("ct_backward").addEventListener("click", (event) => {
+        bluetoothSend(`+CT,TURNANGLE=-${document.getElementById("ct_turnangle").value};`);
+    });
 
-      document
-        .getElementById("cr_forward")
-        .addEventListener("click", (event) => {
-          bluetoothSend(
-            `+CR,TILTVALUE=${document.getElementById("cr_turnangle").value};`
-          );
-        });
+    document.getElementById("cr_forward").addEventListener("click", (event) => {
+        bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_turnangle").value};`);
+    });
 
-      document.getElementById("cr_backward")
-        .addEventListener("click", (event) => {
-          bluetoothSend(
-            `+CR,TILTVALUE=-${document.getElementById("cr_turnangle").value};`
-          );
-        });
+    document.getElementById("cr_backward").addEventListener("click", (event) => {
+        bluetoothSend(`+CR,TILTVALUE=-${document.getElementById("cr_turnangle").value};`);
+    });
 
     document.getElementById("a_rot_start").addEventListener("click", (event) => {
-      var speeds = document.getElementById('speeds').value;
-      var time_turn;
-      var time_tilt1;
-      var time_tilt2;
-      var time_tilt3;
-      tilt1_value = document.getElementById('cr_tilt1').value
-      tilt2_value = document.getElementById('cr_tilt2').value
-      tilt3_value = document.getElementById('cr_tilt3').value
+	var speeds = document.getElementById('speeds').value;
+	var time_turn;
+	var time_tilt1;
+	var time_tilt2;
+	var time_tilt3;
+	tilt1_value = document.getElementById('cr_tilt1').value
+	tilt2_value = document.getElementById('cr_tilt2').value
+	tilt3_value = document.getElementById('cr_tilt3').value
 
-      async function speed() {
+    async function speed() {
         if (document.getElementById('a_rot_sl').checked){
-          time_turn = 91800;
-          await sleep(20);
-          bluetoothSend(`+CT,TURNSPEED=110;`);
-          await sleep(20);
-          bluetoothSend(`+CR,TILTSPEED=9;`);
-          await sleep(20);
+			time_turn = 91800;
+			await sleep(20);
+			bluetoothSend(`+CT,TURNSPEED=110;`);
+			await sleep(20);
+			bluetoothSend(`+CR,TILTSPEED=9;`);
+			await sleep(20);
         } else if (document.getElementById('a_rot_mi').checked) {
-          time_turn = 61800;
-          await sleep(20);
-          bluetoothSend(`+CT,TURNSPEED=60;`);
-          await sleep(20);
-          bluetoothSend(`+CR,TILTSPEED=9;`);
-          await sleep(20);
+			time_turn = 61800;
+			await sleep(20);
+			bluetoothSend(`+CT,TURNSPEED=60;`);
+			await sleep(20);
+			bluetoothSend(`+CR,TILTSPEED=9;`);
+			await sleep(20);
         } else if (document.getElementById('a_rot_fa').checked) {
-          time_turn = 38000;
-          await sleep(20);
-          bluetoothSend(`+CT,TURNSPEED=35.64;`);
-          await sleep(20);
-          bluetoothSend(`+CR,TILTSPEED=9;`);
-          await sleep(20);
+			time_turn = 38000;
+			await sleep(20);
+			bluetoothSend(`+CT,TURNSPEED=35.64;`);
+			await sleep(20);
+			bluetoothSend(`+CR,TILTSPEED=9;`);
+			await sleep(20);
         }
-      }
+    }
 
-      async function run_automatic() {
+    async function run_automatic() {
         bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt1").value};`);
         time_tilt1 = tilt1_value * 0.157;
         if (time_tilt1 < 0) {
-          time_tilt1 = time_tilt1 * -1
+			time_tilt1 = time_tilt1 * -1
         } else if (time_tilt1 == 0){
-          time_tilt1 = 50
+			time_tilt1 = 50
         }
         await sleep(time_tilt1)
-        bluetoothSend('+CT,TURNANGLE=1080;');
+        bluetoothSend('+CT,TURNCONTINUE=1;');
         await sleep(time_turn);
         bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt2").value};`);
         await sleep(20)
         if (tilt1_value < 0){
-          tilt1_value = tilt1_value * -1
+			tilt1_value = tilt1_value * -1
         }
         if (tilt2_value < 0){
-          tilt2_value = tilt2_value * -1
+			tilt2_value = tilt2_value * -1
         }
         time_tilt2 = tilt1_value + tilt2_value
         time_tilt2 = time_tilt2 * 0.157
@@ -420,95 +403,94 @@
         bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt3").value};`);
         await sleep(20)
         if (tilt2_value < 0){
-          tilt2_value = tilt2_value * -1
+			tilt2_value = tilt2_value * -1
         }
         if (tilt3_value < 0){
-          tilt3_value = tilt3_value * -1
+			tilt3_value = tilt3_value * -1
         }
         time_tilt3 = tilt2_value + tilt3_value
         time_tilt3 = time_tilt3 * 0.157
         await sleep(time_tilt3)
         await sleep(time_turn);
+		bluetoothSend(`+CR,STOP;`);
         bluetoothSend(`+CR,TILTVALUE=0;`);
-      }
+	}
 
-      speed()
-      run_automatic()
-      });
+	speed()
+	run_automatic()
+    });
 
-      document.getElementById("a_rot_stop").addEventListener("click", (event) => {
-        return;
-      });
+    document.getElementById("a_rot_stop").addEventListener("click", (event) => {
+		return;
+    });
 
-      function sleep(milliseconds) {
-       return new Promise(resolve => setTimeout(resolve, milliseconds));
-      }
+    function sleep(milliseconds) {
+		return new Promise(resolve => setTimeout(resolve, milliseconds));
+    }
+	
+	document.getElementById("sp_start").addEventListener("click", (event) => {
+		spInterval = setInterval(() => {
+			sp_turnangle = parseInt(360 / document.getElementById("sp_steps").value);
+			sp_current_step++;
+			bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
 
-      document.getElementById("sp_start").addEventListener("click", (event) => {
-        spInterval = setInterval(() => {
-		  var sp_turnangle;
-          sp_current_step++;
-          sp_turnangle = parseInt(360 / document.getElementById("sp_steps").value);
-          bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
+			if (sp_current_step == parseInt(document.getElementById("sp_steps").value)) {
+				clearInterval(spInterval);
+			}
+		}, parseInt(document.getElementById("sp_pause").value));
+	});
 
-          if (sp_current_step == parseInt(document.getElementById("sp_steps").value)) {
-            clearInterval(spInterval);
-          }
-        }, parseInt(document.getElementById("sp_pause").value));
-      });
+	document.getElementById("sp_stop").addEventListener("click", (event) => {
+		sp_current_step = 0;
+		clearInterval(spInterval);
+	});
 
-      document.getElementById("sp_stop").addEventListener("click", (event) => {
-        sp_current_step = 0;
-        clearInterval(spInterval);
-      });
+	document.getElementById("sp_step_back").addEventListener("click", (event) => {
+		bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
+	});
 
-      document.getElementById("sp_step_back").addEventListener("click", (event) => {
-          bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
-        });
+	document.getElementById("sp_step_forward").addEventListener("click", (event) => {
+		bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
+	});
 
-      document.getElementById("sp_step_forward").addEventListener("click", (event) => {
-          bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
-        });
+    document.addEventListener("keydown", (e) => {
+		switch (e.key) {
+			case "a":
+				bluetoothSend("+CT,TURNANGLE=1;");
+				break;
 
-      document.addEventListener("keydown", (e) => {
-        switch (e.key) {
-          case "a":
-            bluetoothSend("+CT,TURNANGLE=1;");
-            break;
+			case "d":
+				bluetoothSend("+CT,TURNANGLE=-1;");
+				break;
 
-          case "d":
-            bluetoothSend("+CT,TURNANGLE=-1;");
-            break;
+			case "w":
+				tiltvalue = tiltvalue + 1;
+				if (tiltvalue > 30) {
+					tiltvalue = 30;
+				}
+				bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
+				break;
 
-          case "w":
-            tiltvalue = tiltvalue + 1;
-            if (tiltvalue > 30) {
-              tiltvalue = 30;
-            }
-            bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
-            break;
+			case "s":
+				tiltvalue = tiltvalue + -1;
+				if (tiltvalue < -30) {
+					tiltvalue = -30;
+				}
+				bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
+				break;
 
-          case "s":
-            tiltvalue = tiltvalue + -1;
-            if (tiltvalue < -30) {
-              tiltvalue = -30;
-            }
-            console.log(tiltvalue);
-            bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
-            break;
+			case "e":
+				bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
+				break;
 
-          case "e":
-            bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
-            break;
+			case "q":
+				bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
+				break;
 
-          case "q":
-            bluetoothSend(`+CR,TILTVALUE=${tiltvalue};`);
-            break;
-
-          default:
-            break;
-        }
-      });
+		default:
+			break;
+		}
+	});
     </script>
   </body>
 </html>
