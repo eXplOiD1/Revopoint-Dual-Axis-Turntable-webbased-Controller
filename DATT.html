@@ -143,6 +143,7 @@
       line-height: 20px;
   }
   </style>
+
   <body>
     <h1>Revopoint DATT</h1><br>
     <button style="position:absolute; top:0; right:0; margin-top:5px; margin-right:5px;" id="discss">CSS</button>
@@ -261,13 +262,10 @@
         <td><h3>Rotation with Steps</h3></td>
       </tr>
       <tr>
-        <td>Turnangle per Step&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style="margin-left: 10px" class=input_text type="text" id="sp_turnangle" value="10" /></td>
+        <td>Steps:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style="margin-left: 10px" class=input_text type="text" id="sp_steps" value="36"/></td>
       </tr>
       <tr>
         <td>Pause between move in ms<input style="margin-left: 10px" class=input_text type="text" id="sp_pause" value="2500" /></td>
-      </tr>
-      <tr>
-        <td>Steps:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input style="margin-left: 10px" class=input_text type="text" id="sp_steps" value="36" /></td>
       </tr>
       <tr>
         <td>
@@ -436,60 +434,43 @@
 
       speed()
       run_automatic()
-    });
+      });
 
-    document.getElementById("a_rot_stop").addEventListener("click", (event) => {
-      return;
-    });
+      document.getElementById("a_rot_stop").addEventListener("click", (event) => {
+        return;
+      });
 
       function sleep(milliseconds) {
        return new Promise(resolve => setTimeout(resolve, milliseconds));
       }
 
-        document.getElementById("sp_start").addEventListener("click", (event) => {
-          spInterval = setInterval(() => {
-            sp_current_step++;
+      document.getElementById("sp_start").addEventListener("click", (event) => {
+        spInterval = setInterval(() => {
+		  var sp_turnangle;
+          sp_current_step++;
+          sp_turnangle = parseInt(360 / document.getElementById("sp_steps").value);
+          bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
 
-            bluetoothSend(
-              `+CT,TURNANGLE=${document.getElementById("sp_turnangle").value};`
-            );
+          if (sp_current_step == parseInt(document.getElementById("sp_steps").value)) {
+            clearInterval(spInterval);
+          }
+        }, parseInt(document.getElementById("sp_pause").value));
+      });
 
-            if (
-              sp_current_step ==
-              parseInt(document.getElementById("sp_steps").value)
-            ) {
-              clearInterval(spInterval);
-            }
-          }, parseInt(document.getElementById("sp_pause").value));
+      document.getElementById("sp_stop").addEventListener("click", (event) => {
+        sp_current_step = 0;
+        clearInterval(spInterval);
+      });
+
+      document.getElementById("sp_step_back").addEventListener("click", (event) => {
+          bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
         });
 
-        document.getElementById("sp_stop").addEventListener("click", (event) => {
-          sp_current_step = 0;
-          clearInterval(spInterval);
+      document.getElementById("sp_step_forward").addEventListener("click", (event) => {
+          bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
         });
-
-        document
-          .getElementById("sp_step_back")
-          .addEventListener("click", (event) => {
-            bluetoothSend(
-              `+CT,TURNANGLE=-${document.getElementById("sp_turnangle").value};`
-            );
-          });
-
-        document
-          .getElementById("sp_step_forward")
-          .addEventListener("click", (event) => {
-            bluetoothSend(
-              `+CT,TURNANGLE=${document.getElementById("sp_turnangle").value};`
-            );
-          });
 
       document.addEventListener("keydown", (e) => {
-        if (!e.repeat) {
-          console.log(`Key "${e.key}" pressed [event: keydown]`);
-        } else {
-          console.log(`Key "${e.key}" repeating [event: keydown]`);
-        }
         switch (e.key) {
           case "a":
             bluetoothSend("+CT,TURNANGLE=1;");
