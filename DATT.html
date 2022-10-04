@@ -98,51 +98,6 @@
     cursor: pointer;
   }
 
-  label {
-      display: inline-block;
-      cursor: pointer;
-      position: relative;
-      padding-left: 28px;
-      margin-right: 12px;
-      font-size: 16px;
-      line-height: 22px;
-      font-weight: bold;
-  }
-
-  input[type=radio],
-  input[type=checkbox] {
-      display: none;
-  }
-
-  label:before {
-      font-weight: normal;
-      content: '';
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      margin-right: 10px;
-      position: absolute;
-      left: 0;
-      bottom: 1px;
-      background-color: #d3d3d3;
-      box-shadow: inset 0px 2px 3px 0px #1e1e1e;
-  }
-
-  .radio label:before {
-      border-radius: 10px;
-  }
-
-  .checkbox label:before {
-      border-radius: 3px;
-  }
-
-  input[type=radio]:checked + label:before {
-      content: '\2022';
-      color: #2d2d2d;
-      font-size: 32px;
-      text-align: center;
-      line-height: 20px;
-  }
   </style>
   <body>
     <h1>Revopoint DATT</h1><br>
@@ -235,18 +190,6 @@
         <td><h3>Auto Rotation</h3></td>
         <tr>
           <td>
-            <div id="speeds">
-              <input type="radio" name="Check" onclick="onlyOne(this)" id="a_rot_sl" value="a_rot_sl">
-              <label for="a_rot_sl"> Slow </label>
-              <input type="radio" name="Check" onclick="onlyOne(this)" id="a_rot_mi" value="a_rot_mi" checked="checked">
-              <label for="a_rot_mi"> Medium </label>
-              <input type="radio" name="Check" onclick="onlyOne(this)" id="a_rot_fa" value="a_rot_fa">
-              <label for="a_rot_fa"> Fast </label>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
             <input type="text" class=input_text id="cr_tilt1" value="0" />
             <input type="text" class=input_text id="cr_tilt2" value="-30" />
             <input type="text" class=input_text id="cr_tilt3" value="15" />
@@ -287,7 +230,11 @@
 	let server = false;
 	let tiltvalue = 0;
 	let sp_current_step = 0;
+	let sp_calc_angle = 0;
+	let sp_turnangle = 0;
 	let spInterval = false;
+	var button_stop_pressed = 0; 
+	
 
     async function connect() {
 		const device = await navigator.bluetooth.requestDevice({
@@ -299,136 +246,121 @@
 		return server;
 	}
 
-    async function bluetoothSend(cmd) {
+	async function bluetoothSend(cmd) {
 		var enc = new TextEncoder();
 		const service = await server.getPrimaryService(0xffe0);
 		const characteristic = await service.getCharacteristic(0xffe1);
-		characteristic.writeValue(enc.encode(cmd));
+		await characteristic.writeValue(enc.encode(cmd));
+		var read = await characteristic.readValue();
+
+		var read_string = await new TextDecoder().decode(read);
+		
+		return await read_string;
+	}
+	
+    async function set_rotation_speed(event) {
+		await bluetoothSend(`+CT,TURNSPEED=${event.value};`);
     }
 
-    function set_rotation_speed(event) {
-		console.log(`+CT,TURNSPEED=${event.value};`);
-		bluetoothSend(`+CT,TURNSPEED=${event.value};`);
-    }
-
-    function set_tilt_speed(event) {
-		console.log(`+CR,TILTSPEED=${event.value};`);
-		bluetoothSend(`+CR,TILTSPEED=${event.value};`);
+    async function set_tilt_speed(event) {
+		await bluetoothSend(`+CR,TILTSPEED=${event.value};`);
     }
 
       /**Disable CSS Code**/
     document.getElementById("discss").onclick = function() {
 		document.styleSheets[0].disabled = !document.styleSheets[0].disabled;
     }
-
-    function onlyOne(checkbox) {
-		var checkboxes = document.getElementsByName('check')
-		checkboxes.forEach((item) => {if (item !== checkbox) item.checked = false})
-    }
-
-    document.getElementById("ct_forward").addEventListener("click", (event) => {
-        bluetoothSend(`+CT,TURNANGLE=${document.getElementById("ct_turnangle").value};`);
+	
+	async function getvalue(a, b){
+		var read = await bluetoothSend('+QT,CHANGEANGLE;');
+		var read_result = read;
+		var read_result = read_result.replace('+DATA=', '');
+		var read_result = read_result.replace(';', '');
+		var read_result = parseInt(read_result);
+		
+		while (read_result < a) {
+			var read = await bluetoothSend('+QT,CHANGEANGLE;');
+			var read_result = read;
+			var read_result = read_result.replace('+DATA=', '');
+			var read_result = read_result.replace(';', '');
+			var read_result = parseInt(read_result);
+			await sleep(40)
+			console.log(read_result);
+			
+		}
+		if (read_result == a) {
+			//debugger;
+			return true;
+		}
+		if (b == 1){ 
+			button_stop_pressed = 0;
+			return;
+		}
+	}
+	
+    document.getElementById("ct_forward").addEventListener("click", async function (event){
+        await bluetoothSend(`+CT,TURNANGLE=${document.getElementById("ct_turnangle").value};`);
     });
 
-    document.getElementById("ct_backward").addEventListener("click", (event) => {
-        bluetoothSend(`+CT,TURNANGLE=-${document.getElementById("ct_turnangle").value};`);
+    document.getElementById("ct_backward").addEventListener("click", async function (event){
+        await bluetoothSend(`+CT,TURNANGLE=-${document.getElementById("ct_turnangle").value};`);
     });
 
-    document.getElementById("cr_forward").addEventListener("click", (event) => {
-        bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_turnangle").value};`);
+    document.getElementById("cr_forward").addEventListener("click", async function (event){
+        await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_turnangle").value};`);
     });
 
-    document.getElementById("cr_backward").addEventListener("click", (event) => {
-        bluetoothSend(`+CR,TILTVALUE=-${document.getElementById("cr_turnangle").value};`);
+    document.getElementById("cr_backward").addEventListener("click", async function (event){
+        await bluetoothSend(`+CR,TILTVALUE=-${document.getElementById("cr_turnangle").value};`);
     });
 
-    document.getElementById("a_rot_start").addEventListener("click", (event) => {
-	var speeds = document.getElementById('speeds').value;
-	var time_turn;
-	var time_tilt1;
-	var time_tilt2;
-	var time_tilt3;
-	tilt1_value = document.getElementById('cr_tilt1').value
-	tilt2_value = document.getElementById('cr_tilt2').value
-	tilt3_value = document.getElementById('cr_tilt3').value
+    document.getElementById("a_rot_stop").addEventListener("click",async function (event){
+		button_stop_pressed = 1;
+		await getvalue('0', 1);
+		await bluetoothSend(`+CT,STOP;`);
+		await bluetoothSend(`+CT,TOZERO;`);
+		await bluetoothSend(`+CR,TILTVALUE=0;`);
+    });
 
-    async function speed() {
-        if (document.getElementById('a_rot_sl').checked){
-			time_turn = 91800;
-			await sleep(20);
-			bluetoothSend(`+CT,TURNSPEED=110;`);
-			await sleep(20);
-			bluetoothSend(`+CR,TILTSPEED=9;`);
-			await sleep(20);
-        } else if (document.getElementById('a_rot_mi').checked) {
-			time_turn = 61800;
-			await sleep(20);
-			bluetoothSend(`+CT,TURNSPEED=60;`);
-			await sleep(20);
-			bluetoothSend(`+CR,TILTSPEED=9;`);
-			await sleep(20);
-        } else if (document.getElementById('a_rot_fa').checked) {
-			time_turn = 38000;
-			await sleep(20);
-			bluetoothSend(`+CT,TURNSPEED=35.64;`);
-			await sleep(20);
-			bluetoothSend(`+CR,TILTSPEED=9;`);
-			await sleep(20);
-        }
-    }
+    document.getElementById("a_rot_start").addEventListener("click", async function (event){
+	tilt1_value = document.getElementById('cr_tilt1').value;
+	tilt2_value = document.getElementById('cr_tilt2').value;
+	tilt3_value = document.getElementById('cr_tilt3').value;
 
-    async function run_automatic() {
-        bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt1").value};`);
-        time_tilt1 = tilt1_value * 0.157;
-        if (time_tilt1 < 0) {
-			time_tilt1 = time_tilt1 * -1
-        } else if (time_tilt1 == 0){
-			time_tilt1 = 50
-        }
-        await sleep(time_tilt1)
-        bluetoothSend('+CT,TURNCONTINUE=1;');
-        await sleep(time_turn);
-        bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt2").value};`);
-        await sleep(20)
-        if (tilt1_value < 0){
-			tilt1_value = tilt1_value * -1
-        }
-        if (tilt2_value < 0){
-			tilt2_value = tilt2_value * -1
-        }
-        time_tilt2 = tilt1_value + tilt2_value
-        time_tilt2 = time_tilt2 * 0.157
-        await sleep(time_tilt2)
-        await sleep(time_turn);
-        bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt3").value};`);
-        await sleep(20)
-        if (tilt2_value < 0){
-			tilt2_value = tilt2_value * -1
-        }
-        if (tilt3_value < 0){
-			tilt3_value = tilt3_value * -1
-        }
-        time_tilt3 = tilt2_value + tilt3_value
-        time_tilt3 = time_tilt3 * 0.157
-        await sleep(time_tilt3)
-        await sleep(time_turn);
-		bluetoothSend(`+CR,STOP;`);
-        bluetoothSend(`+CR,TILTVALUE=0;`);
+		async function run_automatic() {
+			await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt1").value};`);
+			await bluetoothSend('+CT,TURNCONTINUE=1;');
+			if (button_stop_pressed === 1){return;}
+				var position = await getvalue('350',0);
+				if (position == true){
+					await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt2").value};`);
+					position == false;
+				}
+			await sleep(500)
+			if (button_stop_pressed === 1){return;}
+				var position = await getvalue('350',0);
+				if (position == true){
+					await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt3").value};`);
+					position == false;
+				}
+			await sleep(500)
+			if (button_stop_pressed === 1){return;}
+				var position = await getvalue('359',0);
+				if (position == true){
+					await bluetoothSend(`+CT,STOP;`);
+					await bluetoothSend(`+CR,TILTVALUE=0;`);
+					position == false;
+			}
 	}
 
-	speed()
 	run_automatic()
-    });
-
-    document.getElementById("a_rot_stop").addEventListener("click", (event) => {
-		return;
     });
 
     function sleep(milliseconds) {
 		return new Promise(resolve => setTimeout(resolve, milliseconds));
     }
 	
-	document.getElementById("sp_start").addEventListener("click", (event) => {
+	document.getElementById("sp_start").addEventListener("click", async function (event){
 		spInterval = setInterval(() => {
 			sp_turnangle = parseInt(360 / document.getElementById("sp_steps").value);
 			sp_current_step++;
@@ -440,16 +372,19 @@
 		}, parseInt(document.getElementById("sp_pause").value));
 	});
 
-	document.getElementById("sp_stop").addEventListener("click", (event) => {
+	document.getElementById("sp_stop").addEventListener("click", async function (event){
 		sp_current_step = 0;
 		clearInterval(spInterval);
 	});
 
-	document.getElementById("sp_step_back").addEventListener("click", (event) => {
+	document.getElementById("sp_step_back").addEventListener("click", async function (event){
+		sp_current_step--;
+		sp_calc_angle = sp_calc_angle - 
 		bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
 	});
 
-	document.getElementById("sp_step_forward").addEventListener("click", (event) => {
+	document.getElementById("sp_step_forward").addEventListener("click", async function (event){
+		sp_current_step++;
 		bluetoothSend(`+CT,TURNANGLE=${sp_turnangle};`);
 	});
 
