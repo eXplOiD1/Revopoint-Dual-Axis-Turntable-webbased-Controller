@@ -375,7 +375,7 @@
 			if (button_stop_pressed === true){return;}
 				var position = await getvalue('359',0);
 				if (position == true){
-					await bluetoothSend(`+CT,STOP;`);a
+					await bluetoothSend(`+CT,STOP;`);
 					await bluetoothSend(`+CR,TILTVALUE=0;`);
 					position == false;
 			}
