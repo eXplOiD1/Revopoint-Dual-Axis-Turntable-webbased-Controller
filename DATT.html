@@ -227,16 +227,18 @@
        * Schauen in welchen PrimaryService der Befehl / Characteristic geschrieben werden muss
        **/
 
+	var debuglog = false;
 	let server = false;
 	let tiltvalue = 0;
 	let sp_current_step = 0;
 	let sp_calc_angle = 0;
 	let sp_turnangle = 0;
 	let spInterval = false;
-	var button_stop_pressed = 0; 
+	var button_stop_pressed = false; 
 	var pause_read_result = false;
 	var getvalue_running = false;
 	var sendcommand = 0;
+	var pause = false;
 	
 
     async function connect() {
@@ -250,6 +252,9 @@
 	}
 
 	async function bluetoothSend(cmd) {
+		if (debuglog == true){
+			console.log(cmd);
+		}
 		var enc = new TextEncoder();
 		const service = await server.getPrimaryService(0xffe0);
 		const characteristic = await service.getCharacteristic(0xffe1);
@@ -293,8 +298,14 @@
 		var read_result = read_result.replace(';', '');
 		var read_result = parseInt(read_result);
 		getvalue_running = true;
-		
-		while (read_result < a) {
+
+		if (b == 1){ 
+			await sleep(50);
+			button_stop_pressed = false;
+			return;
+		}
+
+		while (read_result < a && button_stop_pressed === false) {
 			var read = await bluetoothSend('+QT,CHANGEANGLE;');
 			var read_result = read;
 			var read_result = read_result.replace('+DATA=', '');
@@ -302,23 +313,16 @@
 			var read_result = parseInt(read_result);
 			await sleep(40)
 			if (pause_read_result == true){
-				//debugger;
-				await sleep(50)
+				await sleep(50);
 				await bluetoothSend(sendcommand);
-				console.log(sendcommand);
 				pause_read_result = false;
 			}
 			//console.log(read_result);
-			
 		}
 		if (read_result == a) {
 			getvalue_running = false;
 			return true;
-		}
-		if (b == 1){ 
-			button_stop_pressed = 0;
-			return;
-		}
+		} else { return; }
 	}
 	
     document.getElementById("ct_forward").addEventListener("click", async function (event){
@@ -337,8 +341,9 @@
         await bluetoothSend(`+CR,TILTVALUE=-${document.getElementById("cr_turnangle").value};`);
     });
 
-    document.getElementById("a_rot_stop").addEventListener("click",async function (event){
-		button_stop_pressed = 1;
+    document.getElementById("a_rot_stop").addEventListener("click", async function (event){
+		button_stop_pressed = true;
+		await sleep(1000);
 		await getvalue('0', 1);
 		await bluetoothSend(`+CT,STOP;`);
 		await bluetoothSend(`+CT,TOZERO;`);
@@ -353,21 +358,21 @@
 		async function run_automatic() {
 			await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt1").value};`);
 			await bluetoothSend('+CT,TURNCONTINUE=1;');
-			if (button_stop_pressed === 1){return;}
-				var position = await getvalue('350',0);
+			if (button_stop_pressed === true){return;}
+				var position = await getvalue('359',0);
 				if (position == true){
 					await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt2").value};`);
 					position == false;
 				}
-			await sleep(500)
-			if (button_stop_pressed === 1){return;}
-				var position = await getvalue('350',0);
+			await sleep(100)
+			if (button_stop_pressed === true){return;}
+				var position = await getvalue('359',0);
 				if (position == true){
 					await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt3").value};`);
 					position == false;
 				}
-			await sleep(500)
-			if (button_stop_pressed === 1){return;}
+			await sleep(100)
+			if (button_stop_pressed === true){return;}
 				var position = await getvalue('359',0);
 				if (position == true){
 					await bluetoothSend(`+CT,STOP;`);
