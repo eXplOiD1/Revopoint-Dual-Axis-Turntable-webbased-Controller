@@ -317,9 +317,9 @@
 				await bluetoothSend(sendcommand);
 				pause_read_result = false;
 			}
-			//console.log(read_result);
+			console.log(read_result);
 		}
-		if (read_result == a) {
+		if (read_result >= a) {
 			getvalue_running = false;
 			return true;
 		} else { return; }
@@ -359,21 +359,21 @@
 			await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt1").value};`);
 			await bluetoothSend('+CT,TURNCONTINUE=1;');
 			if (button_stop_pressed === true){return;}
-				var position = await getvalue('359',0);
+				var position = await getvalue('350',0);
 				if (position == true){
 					await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt2").value};`);
 					position == false;
 				}
-			await sleep(100)
+			await sleep(1000)
 			if (button_stop_pressed === true){return;}
-				var position = await getvalue('359',0);
+				var position = await getvalue('350',0);
 				if (position == true){
 					await bluetoothSend(`+CR,TILTVALUE=${document.getElementById("cr_tilt3").value};`);
 					position == false;
 				}
-			await sleep(100)
+			await sleep(1000)
 			if (button_stop_pressed === true){return;}
-				var position = await getvalue('359',0);
+				var position = await getvalue('350',0);
 				if (position == true){
 					await bluetoothSend(`+CT,STOP;`);
 					await bluetoothSend(`+CR,TILTVALUE=0;`);
