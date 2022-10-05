@@ -234,6 +234,9 @@
 	let sp_turnangle = 0;
 	let spInterval = false;
 	var button_stop_pressed = 0; 
+	var pause_read_result = false;
+	var getvalue_running = false;
+	var sendcommand = 0;
 	
 
     async function connect() {
@@ -259,11 +262,23 @@
 	}
 	
     async function set_rotation_speed(event) {
-		await bluetoothSend(`+CT,TURNSPEED=${event.value};`);
+		if (getvalue_running === true){
+			pause_read_result = true;
+			rotation_speed_value = event.value;
+			sendcommand = `+CT,TURNSPEED=${rotation_speed_value};`;
+		} else {
+			await bluetoothSend(`+CT,TURNSPEED=${event.value};`);
+		}
     }
 
     async function set_tilt_speed(event) {
-		await bluetoothSend(`+CR,TILTSPEED=${event.value};`);
+		if (getvalue_running === true){
+			pause_read_result = true;
+			tilt_speed_value = event.value;
+			sendcommand = `+CR,TILTSPEED=${tilt_speed_value};`;
+		} else {
+			await bluetoothSend(`+CR,TILTSPEED=${event.value};`);
+		}
     }
 
       /**Disable CSS Code**/
@@ -277,6 +292,7 @@
 		var read_result = read_result.replace('+DATA=', '');
 		var read_result = read_result.replace(';', '');
 		var read_result = parseInt(read_result);
+		getvalue_running = true;
 		
 		while (read_result < a) {
 			var read = await bluetoothSend('+QT,CHANGEANGLE;');
@@ -285,11 +301,18 @@
 			var read_result = read_result.replace(';', '');
 			var read_result = parseInt(read_result);
 			await sleep(40)
-			console.log(read_result);
+			if (pause_read_result == true){
+				//debugger;
+				await sleep(50)
+				await bluetoothSend(sendcommand);
+				console.log(sendcommand);
+				pause_read_result = false;
+			}
+			//console.log(read_result);
 			
 		}
 		if (read_result == a) {
-			//debugger;
+			getvalue_running = false;
 			return true;
 		}
 		if (b == 1){ 
