@@ -334,7 +334,6 @@
           pause_read_result = false;
         }
         document.getElementById("a_rot_start").innerHTML = read_result;
-        //console.log(read_result);
       }
       if (read_result >= a) {
         getvalue_running = false;
@@ -429,15 +428,12 @@
           var angle = angle.replace(';', '');
           var angle = parseInt(angle);
 
-          console.log(angle);
-
           if (angle >= 360) {
             rws_status = false;
             return;
           }
           else if (rws_pause === true) {
             while (rws_pause) {
-              console.log("wait");
               await sleep(1000);
             }
           }
