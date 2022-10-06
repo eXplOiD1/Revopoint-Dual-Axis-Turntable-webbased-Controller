@@ -416,6 +416,9 @@
 
         let step_size = 360 / Number(document.getElementById('sp_steps').value);
 
+        await bluetoothSend(`+CT,STOP;`);
+        await bluetoothSend(`+CT,TOZERO;`);
+
         while (rws_status) {
           next_step = step_size;
           await bluetoothSend(`+CT,TURNANGLE=${step_size};`);
