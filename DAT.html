@@ -364,9 +364,11 @@
       await bluetoothSend(`+CT,STOP;`);
       await bluetoothSend(`+CT,TOZERO;`);
       await bluetoothSend(`+CR,TILTVALUE=0;`);
+      document.getElementById("a_rot_start").disabled = false;
     });
 
     document.getElementById("a_rot_start").addEventListener("click", async function (event) {
+      document.getElementById("a_rot_start").disabled = true;
       tilt1_value = document.getElementById('cr_tilt1').value;
       tilt2_value = document.getElementById('cr_tilt2').value;
       tilt3_value = document.getElementById('cr_tilt3').value;
@@ -433,6 +435,8 @@
           var angle = angle.replace(';', '');
           var angle = parseInt(angle);
 
+          document.getElementById("sp_start").innerHTML = angle;
+
           if (angle >= 360) {
             rws_status = false;
             return;
@@ -446,7 +450,6 @@
             await sleep(Number(document.getElementById('sp_pause_time').value));
             trigger = false;
             next_step += step_size;
-            console.log(`trigger`)
           }
         }
       }
@@ -474,6 +477,7 @@
       rws_pause = false;
       document.getElementById("sp_pause").innerHTML = "Pause";
 
+      document.getElementById("sp_start").innerHTML = "Start";
       document.getElementById("sp_start").disabled = false;
     });
 
