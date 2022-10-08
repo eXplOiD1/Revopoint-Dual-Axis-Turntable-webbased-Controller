@@ -416,6 +416,7 @@
         let step_size = 360 / Number(document.getElementById('sp_steps').value);
         let next_step = step_size;
         let trigger = false;
+        let step_number = 0;
 
         await bluetoothSend(`+CT,STOP;`);
         sleep(50);
@@ -424,7 +425,9 @@
 
         while (rws_status) {
           if (!trigger) {
+            step_number++;
             await bluetoothSend(`+CT,TURNANGLE=${step_size};`);
+            document.getElementById("sp_start").innerHTML = `Step: ${step_number}`;
             sleep(50);
             trigger = true;
           }
@@ -433,11 +436,9 @@
           var angle = read;
           var angle = angle.replace('+DATA=', '');
           var angle = angle.replace(';', '');
-          var angle = parseInt(angle);
+          var angle = new Number(angle);
 
-          document.getElementById("sp_start").innerHTML = angle;
-
-          if (angle >= 360) {
+          if (angle >= 360 || (angle < 10 && step_number > 10)) {
             rws_status = false;
             return;
           }
@@ -449,7 +450,7 @@
           else if (angle >= next_step) {
             await sleep(Number(document.getElementById('sp_pause_time').value));
             trigger = false;
-            next_step += step_size;
+            next_step += Math.round(step_size);
           }
         }
       }
