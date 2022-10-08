@@ -442,7 +442,7 @@
           var angle = read;
           var angle = angle.replace('+DATA=', '');
           var angle = angle.replace(';', '');
-          var angle = parseInt(angle);
+          var angle = new Number(angle);
 
           document.getElementById("sp_start").innerHTML = sp_current_step+" / "+Number(document.getElementById('sp_steps').value);
 
@@ -462,7 +462,7 @@
             await sleep(Number(document.getElementById('sp_pause_time').value));
             trigger = false;
             execution = true;
-            next_step += step_size;
+            next_step += Math.round(step_size);
           }
         }
       }
