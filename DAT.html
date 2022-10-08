@@ -255,6 +255,7 @@
     var sendcommand = 0;
     var pause = false;
 
+
     var rws_status = false; // rotate with steps trigger
     var rws_pause = false;
 
@@ -422,6 +423,7 @@
         let step_size = 360 / Number(document.getElementById('sp_steps').value);
         let next_step = step_size;
         let trigger = false;
+        let execution = false;
 
         await bluetoothSend(`+CT,STOP;`);
         sleep(50);
@@ -431,6 +433,7 @@
         while (rws_status) {
           if (!trigger) {
             await bluetoothSend(`+CT,TURNANGLE=${step_size};`);
+            sp_current_step = ++sp_current_step;
             sleep(50);
             trigger = true;
           }
@@ -441,10 +444,13 @@
           var angle = angle.replace(';', '');
           var angle = parseInt(angle);
 
-          document.getElementById("sp_start").innerHTML = angle;
+          document.getElementById("sp_start").innerHTML = sp_current_step+" / "+Number(document.getElementById('sp_steps').value);
 
-          if (angle >= 360) {
+          if (angle >= 350 && execution == true || angle == 0 && execution == true) {
             rws_status = false;
+            sp_current_step = 0;
+            document.getElementById("sp_start").innerHTML = "Start";
+            document.getElementById("sp_start").disabled = false;
             return;
           }
           else if (rws_pause === true) {
@@ -455,6 +461,7 @@
           else if (angle >= next_step) {
             await sleep(Number(document.getElementById('sp_pause_time').value));
             trigger = false;
+            execution = true;
             next_step += step_size;
           }
         }
@@ -479,6 +486,7 @@
       await bluetoothSend(`+CT,STOP;`);
       sleep(50);
       await bluetoothSend(`+CT,TOZERO;`);
+      sp_current_step = 0;
 
       rws_pause = false;
       document.getElementById("sp_pause").innerHTML = "Pause";
